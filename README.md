@@ -1,6 +1,6 @@
 # New-CMBootImage PowerShell Script
 
-This repository contains the `New-CmBootImage.ps1` script which automates the creation or modification of a boot image in Configuration Manager. The script facilitates the extraction of drivers from a specified logical folder in Configuration Manager and associates them with the boot image. Additionally, specified optional components are added to the boot image.
+This repository contains the `New-CmBootImage.ps1` script which assists the creation (or modification) of a boot image for Configuration Manager. The script facilitates the extraction of drivers from a specified logical folder in Configuration Manager and associates them with the boot image. Additionally, specified optional components are added to the boot image.
 
 ## Features:
 
