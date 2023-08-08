@@ -13,10 +13,10 @@ Allows for maintenance from boot image properties in the CM Console.
 - Configuration Manager module (`ConfigurationManager.psd1`) initiated from CM Console PowerShell or PowerShell_Ise.
 
 ## Parameters:
-- '-sourceWim': [path\file] Path to the source WIM (default is '%ADK%\...\amd64\en-us\winpe.wim')
-- '-bootImageRoot': [uncpath] Root directory for the boot image (default is '\\$cmSiteServer\d$\OSD')
-- '-bootImageFolderName': [foldername] Name of the boot image folder (default is the '$osVersion' of the source WIM)
-- '-bootImageName': [name] Name of the new boot image in CM (default is the '$osVersion.$osBuild' of the source WIM)
+- `-sourceWim`: [path\file] Path to the source WIM (default is `$ADK\...\amd64\en-us\winpe.wim`)
+- `-bootImageRoot`: [uncpath] Root directory for the boot image (default is `\\$cmSiteServer\d$\OSD`)
+- `-bootImageFolderName`: [foldername] Name of the boot image folder (default is the `$osVersion` of the source WIM)
+- `-bootImageName`: [name] Name of the new boot image in CM (default is the `$osVersion.$osBuild` of the source WIM)
 
 ## Usage:
 - Without parameters, script will use defaults specified in body of script
@@ -31,7 +31,7 @@ Allows for maintenance from boot image properties in the CM Console.
 ## Credits:
 [OpenAI's ChatGPT](https://chat.openai.com/) was used to refactor the original script.
 - The original script can be found at [AdamGrossTX - ConfigMgr/BootImage/New-BootImage.ps1](https://github.com/AdamGrossTX/Toolbox/blob/bf59c0cf153c1b0f489f8e0135d86a05d221b66e/ConfigMgr/BootImage/New-BootImage.ps1)
-- Copyright (c) 2021 Matt Schwartz @ [AdamGrossTX](https://github.com/AdamGrossTX) - [asquaredozen](https://www.asquaredozen.com)
+- Copyright (c) 2021 AdamGrossTX @ [AdamGrossTX](https://github.com/AdamGrossTX) - [asquaredozen](https://www.asquaredozen.com)
 
 ## Contributions
 Contributions are welcome. Please open an issue or submit a pull request if you have any suggestions, questions, or would like to contribute to the project.
