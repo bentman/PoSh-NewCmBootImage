@@ -35,7 +35,7 @@
 #>
 
 [CmdletBinding()]
-param(
+param (
     # [path\file] Path to the source WIM (default is '%ADK%\...\amd64\en-us\winpe.wim')
     [Parameter(Mandatory=$false)] [string]$sourceWim, 
     # [unc path] Root directory for the boot image (default is '\\$cmSiteServer\d$\OSD')
@@ -47,54 +47,40 @@ param(
 )
 
 # Architecture for the ADK version
-    $adkArch = "amd64" 
-
+$adkArch = "amd64" # x86 has been removed from ADK, arm64 is not utilized at this time
 # Filter to get driver paths that match a specific pattern
-    $cmDriversLogicalPath = "*\WinPE\A*" 
+$cmDriversLogicalPath = "*\WinPE\A*" 
 
+# Initialize CM Environment and Script Variables
 begin {
-    # Ensure ConfigurationManager.psd1 is loaded
-    if ($null -eq (Get-Module ConfigurationManager)) {
-        Import-Module ($Env:SMS_ADMIN_UI_PATH.Substring(0,$Env:SMS_ADMIN_UI_PATH.Length-5) + '\ConfigurationManager.psd1')
+    # Import ConfigurationManager module if not loaded
+    if (-not (Get-Module -Name ConfigurationManager)) {
+        Import-Module ($Env:SMS_ADMIN_UI_PATH -replace 'bin\\.*$', 'ConfigurationManager.psd1')
     }
-
-    # Determine if a CMSite PSDrive exists
-    $cmDrive = Get-PSDrive | Where-Object {$_.Provider -is [Microsoft.ConfigurationManagement.PowerShell.Provider.CMSite]} | Select-Object -First 1
-    
-    # If no CMSite PSDrive is found, determine site code and server, then create the drive
-    if ($null -eq $cmDrive) {
+    # Setup CMSite PSDrive
+    $cmDrive = Get-PSDrive | 
+        Where-Object {$_.Provider -is [Microsoft.ConfigurationManagement.PowerShell.Provider.CMSite]} | 
+        Select-Object -First 1
+    if (-not $cmDrive) {
         $cmSite = Get-CMSite | Select-Object -First 1
-        $cmSiteCode = $cmSite.SiteCode
-        $cmSiteServer = $cmSite.ServerName
-        New-PSDrive -Name $cmSiteCode -PSProvider CMSite -Root $cmSiteServer
-        $cmDrive = Get-PSDrive -Name $cmSiteCode
+        New-PSDrive -Name $cmSite.SiteCode -PSProvider CMSite -Root $cmSite.ServerName
+        $cmDrive = Get-PSDrive -Name $cmSite.SiteCode
     }
-    
-    # Change current location to the PSDrive
     Set-Location $cmDrive.Name:
-
-    # If no sourceWim is specified, use the default ADK amd64 boot.wim on the site server
+    # Set default values
     if (-not $sourceWim) {
-        $sourceWim = "\\$cmSiteServer\c$\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\$adkArch\en-us\winpe.wim"
+        $sourceWim = "\\$($cmSite.ServerName)\c$\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\$adkArch\en-us\winpe.wim"
     }
-    
-    # Extract details like OS version and build number from the source WIM
-    $sourceWimInfo = Get-WindowsImage -ImagePath $sourceWim
-    $sourceWimOs = $sourceWimInfo.OSVersion
-    $sourceWimBuild = ($sourceWimInfo.ImageName -split "\.")[-1]
-
-    # Provide default values if parameters aren't provided
-    if (-not $bootImageRoot) {$bootImageRoot = "\\$cmSiteServer\d$\OSD\$sourceWimOs"}
-    if (-not $bootImageFolderName) {$bootImageFolderName = "$sourceWimOs"}
-    if (-not $bootImageName) {$bootImageName = "$sourceWimOs.$sourceWimBuild"}
+    $sourceWimInfo = Get-WindowsImage -ImagePath $sourceWim -Index 1
+    if ($null -eq $bootImageRoot) {$bootImageRoot = "\\$($cmSite.ServerName)\d$\OSD\$sourceWimInfo.Build"}
+    if ($null -eq $bootImageFolderName) {$bootImageFolderName = $sourceWimInfo.Build}
+    if ($null -eq $bootImageName) {$bootImageName = "$($sourceWimInfo.Build).$($sourceWimInfo.Version.Split('.')[-1])"}
 }
 
-# Construct paths and descriptions for the new boot image
-    $newBootWimDescription = "Boot Image for OS Version: $sourceWimOs Build: $sourceWimBuild"
-    $newBootWimPath = Join-Path -Path $bootImageRoot -ChildPath $bootImageFolderName
+# Configure variables for boot.wim properties 
+    $newBootWimDescription = "Boot Image for OS-Build: $($sourceWimInfo.Build) CU-Level: $($sourceWimInfo.Version.Split('.')[-1])"
+    $newBootWimPath = Join-Path $bootImageRoot $bootImageFolderName
     $newBootWimFullName = "$newBootWimPath\$bootImageName-boot.wim"
-
-# Define optional components to be added to the boot image
     $OptionalComponentsList = @(
         "WinPE-HTA",
         "WinPE-MDAC",
@@ -109,49 +95,31 @@ begin {
         "WinPE-WinReCfg",
         "WinPE-PlatformId"
     )
-
-# Boot image configuration options
-    $OptionalComponents = Get-CMWinPEOptionalComponentInfo -Architecture 'x64' -LanguageId 1033 | Where-Object {$_.Name -in $OptionalComponentsList}
+    $OptionalComponents = Get-CMWinPEOptionalComponentInfo -Architecture 'x64' | Where-Object {$_.Name -in $OptionalComponentsList}
     $BootImageOptions = @{
         DeployFromPxeDistributionPoint = $True
         EnableCommandSupport = $True 
-        EnableBinaryDeltaReplication = $True
         Priority = 'High'
         ScratchSpace = 512
         AddOptionalComponent = $OptionalComponents
         Description = $newBootWimDescription
     }
 
-# Prepare for creating the new CM boot image
-    if (Test-Path $newBootWimPath) {
-        Write-Host "newBootWimPath already exists $($newBootWimPath)"
-    } else {
-        New-Item -Path $newBootWimPath -ItemType Directory
-    }
-    Copy-Item -Path $sourceWim -Destination $newBootWimFullName -Force
-
-# Create the new CM boot image with drivers, optional components, and apply settings
-    $cmDriverFolder = Get-CMObject -ClassName "SMS_Driver" | Where-Object { $_.ContentSourcePath -like "$cmDriversLogicalPath" } 
-    $cmLatestDriverFolder = $cmDriverFolder | Sort-Object { [int]($_.ContentSourcePath -split 'A' | Select-Object -Last 1) } -Descending | Select-Object -First 1
-    $winPeDrivers = Get-CMDriver | Where-Object { $_.ContentSourcePath -like "$($cmLatestDriverFolder.ContentSourcePath)*" }
-
-# Add drivers to the boot image
-    try {
-        $newCmBootImage = New-CMBootImage -Name $bootImageName -Path "$newBootWimFullName" -Index 1
-        foreach ($Driver in $winPeDrivers) {
-            Set-CMDriverBootImage -SetDriveBootImageAction AddDriverToBootImage -BootImageName $newCmBootImage -Driver $Driver
-            Write-Host "Drivers were added to CM Boot image properties successfully!" -ForegroundColor Green
-        }
-    } catch {
-        Write-Host "Error occurred while adding drivers to new CM boot image." -ForegroundColor Red
-        Write-Host "Exception Message: $($_.Exception.Message)" -ForegroundColor Yellow
+# Execution
+if (-not (Test-Path $newBootWimPath)) {
+    New-Item -Path $newBootWimPath -ItemType Directory
+}
+Copy-Item -Path $sourceWim -Destination $newBootWimFullName -Force
+# Add drivers and setup boot image
+$winPeDrivers = Get-CMDriver | Where-Object { $_.ContentSourcePath -like $cmDriversLogicalPath }
+try {
+    $newCmBootImage = New-CMBootImage -Name $bootImageName -Path "$newBootWimFullName" -Index 1
+    foreach ($Driver in $winPeDrivers) {
+        Set-CMDriverBootImage -SetDriveBootImageAction AddDriverToBootImage -BootImageName $newCmBootImage -Driver $Driver
     }
 
-# Apply settings to the boot image
-    try {
-        $newCmBootImage | Set-CMBootImage @BootImageOptions
-        Write-Host "CM Boot image creation completed successfully!" -ForegroundColor Green
-    } catch {
-        Write-Host "Error occurred while setting parameters on the CM boot image." -ForegroundColor Red
-        Write-Host "Exception Message: $($_.Exception.Message)" -ForegroundColor Yellow
-    }
+    $newCmBootImage | Set-CMBootImage @BootImageOptions
+    Write-Host "Boot image creation successful!" -ForegroundColor Green
+} catch {
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+}
