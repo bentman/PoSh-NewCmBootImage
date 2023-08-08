@@ -19,7 +19,7 @@ function Create-CMBootImage {
     $sourceWim = $sourceWim ?? "\\$cmSite.ServerName\c$\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment\$adkArch\en-us\winpe.wim"
     $sourceWimInfo = Get-WindowsImage -ImagePath $sourceWim
     $bootImageRoot = $bootImageRoot ?? "\\$cmSite.ServerName\d$\OSD\$sourceWimInfo.OSVersion"
-    $bootImageFolderName = $bootImageFolderName ?? "$sourceWimInfo.OSVersion"
+    $bootImageFolderName = $bootImageFolderName ?? "$sourceWimInfo.OSBuild"
     $bootImageName = $bootImageName ?? "$sourceWimInfo.OSVersion.$(($sourceWimInfo.ImageName -split "\.")[-1])"
     $newBootWimPath = Join-Path -Path $bootImageRoot -ChildPath $bootImageFolderName
     $newBootWimFullName = "$newBootWimPath\$bootImageName-boot.wim"
