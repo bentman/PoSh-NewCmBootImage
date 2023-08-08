@@ -14,9 +14,9 @@ Allows for maintenance from boot image properties in the CM Console.
 
 ## Parameters:
 - `-sourceWim`: [path\file] Path to the source WIM (default is `$ADK\...\amd64\en-us\winpe.wim`)
-- `-bootImageRoot`: [uncpath] Root directory for the boot image (default is `\\$cmSiteServer\d$\OSD`)
-- `-bootImageFolderName`: [foldername] Name of the boot image folder (default is the `$osVersion` of the source WIM)
-- `-bootImageName`: [name] Name of the new boot image in CM (default is the `$osVersion.$osBuild` of the source WIM)
+- `-bootImageRoot`: [uncpath] Root directory for boot image (default is `\\$cmSiteServer\d$\OSD`)
+- `-bootImageFolderName`: [name] FolderName of boot image (default is the `$osVersion` of the source WIM)
+- `-bootImageName`: [name] CM Name of new boot image (default is the `$osVersion.$osBuild` of the source WIM)
 
 ## Usage:
 - Without parameters, script will use defaults specified in body of script
