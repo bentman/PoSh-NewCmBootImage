@@ -33,12 +33,12 @@ Allows for maintenance from boot image properties in the CM Console.
 - The original script can be found at [AdamGrossTX - ConfigMgr/BootImage/New-BootImage.ps1](https://github.com/AdamGrossTX/Toolbox/blob/bf59c0cf153c1b0f489f8e0135d86a05d221b66e/ConfigMgr/BootImage/New-BootImage.ps1)
 - Copyright (c) 2021 AdamGrossTX @ [AdamGrossTX](https://github.com/AdamGrossTX) - Website: [A Square Dozen](https://www.asquaredozen.com)
 
-## Contributions
-Contributions are welcome. Please open an issue or submit a pull request if you have any suggestions, questions, or would like to contribute to the project.
+### Contributions
 
-### GNU General Public License
-This script is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+Contributions are welcome! Please open an issue or submit a pull request if you have suggestions or enhancements.
 
-This script is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+### License
 
-You should have received a copy of the GNU General Public License along with this script.  If not, see <https://www.gnu.org/licenses/>.
+This script is distributed without any warranty; use at your own risk.
+This project is licensed under the GNU General Public License v3. 
+See [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html) for details.
